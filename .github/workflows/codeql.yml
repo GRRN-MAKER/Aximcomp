@@ -35,11 +35,17 @@ jobs:
           languages: ${{ matrix.language }}
 
       # C/C++ needs a build for CodeQL to trace. Build the backends.
+      # Add the correct SIMD flags per arch so AVX intrinsics compile:
+      #   x86_64 → -mavx2 -mfma ;  arm64 → NEON is baseline (no flag)
       - name: Build C/C++ (for CodeQL)
         if: matrix.language == 'cpp'
         run: |
+          ARCH=$(uname -m)
+          SIMD=""
+          if [ "$ARCH" = "x86_64" ]; then SIMD="-mavx2 -mfma"; fi
+          echo "Building for arch=$ARCH with SIMD flags: $SIMD"
           cd axim_compiler/backend_cpu && mkdir -p build
-          c++ -std=c++14 -O2 -fPIC -shared -Iinclude \
+          c++ -std=c++14 -O2 $SIMD -fPIC -shared -Iinclude \
             src/axim_cpu.cpp src/axim_blas.cpp src/axim_dnn.cpp \
             -o build/libaxim_cpu.dylib
           cd ../hip
