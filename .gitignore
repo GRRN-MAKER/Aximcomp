@@ -1,0 +1,40 @@
+# Build artifacts
+**/build/
+**/target/
+*.dylib
+*.so
+*.dll
+*.o
+*.air
+*.metallib
+*.spv
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+dist/
+*.whl
+
+# Rust
+Cargo.lock
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+
+# Docs build
+site/
+
+# Wiki is pushed separately (to the .wiki.git remote)
+# but kept in repo under wiki/ for reference
+.env
+*.env
