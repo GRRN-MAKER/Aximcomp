@@ -73,7 +73,7 @@ jobs:
           python3 axim_compiler/tests/test_loader.py
 
       - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: axim-macos-metal
           path: |
@@ -134,7 +134,7 @@ jobs:
           python3 axim_compiler/tests/test_loader.py
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: axim-linux-vulkan
           path: |
@@ -168,7 +168,7 @@ jobs:
         continue-on-error: true # wheel build is best-effort until backends linked
 
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: axim-wheel-${{ matrix.os }}
           path: axim_compiler/target/wheels/*.whl
