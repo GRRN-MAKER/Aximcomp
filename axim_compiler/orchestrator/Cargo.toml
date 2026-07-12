@@ -11,7 +11,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 # PyO3 exposes the orchestrator as the native `axim._native` Python module.
 # Optional so the crate still builds as a plain cdylib without Python.
-pyo3 = { version = "0.20", features = ["extension-module"], optional = true }
+pyo3 = { version = "0.29", features = ["extension-module"], optional = true }
 
 [features]
 default = []
