@@ -17,11 +17,13 @@
 #include <cstdio>
 #include <cstring>
 
-/* ── API selection ── */
+/* ── API selection ──
+ * Build selector macros are AXIM_BUILD_* to avoid colliding with the
+ * axim_gpu_api_t enum values (AXIM_GPU_METAL / AXIM_GPU_VULKAN). */
 axim_gpu_api_t axim_gpu_api(void) {
-#if defined(AXIM_GPU_METAL)
+#if defined(AXIM_BUILD_METAL)
     return AXIM_GPU_METAL;
-#elif defined(AXIM_GPU_VULKAN)
+#elif defined(AXIM_BUILD_VULKAN)
     return AXIM_GPU_VULKAN;
 #else
     return AXIM_GPU_NONE;
@@ -37,10 +39,10 @@ const char* axim_gpu_backend_name(void) {
 }
 
 int axim_gpu_init(void) {
-#if defined(AXIM_GPU_METAL)
+#if defined(AXIM_BUILD_METAL)
     /* TODO: create MTLDevice + command queue */
     return 0;
-#elif defined(AXIM_GPU_VULKAN)
+#elif defined(AXIM_BUILD_VULKAN)
     /* TODO: create VkInstance, pick physical device, create VkDevice */
     return 0;
 #else

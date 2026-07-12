@@ -9,9 +9,11 @@
  * lowered here to compute shaders, so any SYNAXIM model runs on any GPU.
  *
  * This header defines the stable C ABI the Rust orchestrator calls.
- * The .cpp selects Metal or Vulkan at compile time via AXIM_GPU_METAL /
- * AXIM_GPU_VULKAN, falling back to a CPU-emulated path if neither is
+ * The .cpp selects Metal or Vulkan at compile time via AXIM_BUILD_METAL /
+ * AXIM_BUILD_VULKAN, falling back to a CPU-emulated path if neither is
  * present (so the scaffold is always runnable).
+ * (Build macros are AXIM_BUILD_* so they never collide with the
+ *  axim_gpu_api_t enum values AXIM_GPU_METAL / AXIM_GPU_VULKAN.)
  */
 #ifndef AXIM_GPU_H
 #define AXIM_GPU_H

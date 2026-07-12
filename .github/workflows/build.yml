@@ -117,7 +117,7 @@ jobs:
         working-directory: axim_compiler/backend_gpu
         run: |
           mkdir -p build
-          c++ -std=c++14 -O3 -DAXIM_GPU_VULKAN -fPIC -shared \
+          c++ -std=c++14 -O3 -DAXIM_BUILD_VULKAN -fPIC -shared \
             -Iinclude src/axim_gpu.cpp -o build/libaxim_gpu.so
           ls -la build
 
