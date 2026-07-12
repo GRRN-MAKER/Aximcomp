@@ -36,7 +36,7 @@ jobs:
         run: mkdocs build --strict || (echo "mkdocs.yml missing, using docs/ as-is"; mkdir -p site && cp -r docs/* site/ 2>/dev/null || true; cp README.md site/index.md 2>/dev/null || true)
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
