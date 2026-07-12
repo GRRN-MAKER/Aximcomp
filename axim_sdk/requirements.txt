@@ -1,0 +1,10 @@
+pydantic>=2
+typing-extensions>=4.8
+requests>=2.31
+# If you plan to expose the agent over HTTP from axim-sdk directly
+fastapi>=0.110
+uvicorn>=0.27
+mistralai>=1.0.0
+python-dotenv>=1.0.0
+huggingface_hub>=0.20.0
+pillow>=10.0.0

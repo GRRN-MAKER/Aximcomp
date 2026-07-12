@@ -1,0 +1,23 @@
+[package]
+name = "axim_orchestrator"
+version = "0.1.0"
+edition = "2021"
+description = "AXIM device dispatch — routes AXIM IR to CPU (SIMD) or GPU (Vulkan/Metal). Zero CUDA."
+
+[lib]
+name = "axim_orchestrator"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# PyO3 exposes the orchestrator as the native `axim._native` Python module.
+# Optional so the crate still builds as a plain cdylib without Python.
+pyo3 = { version = "0.20", features = ["extension-module"], optional = true }
+
+[features]
+default = []
+python = ["pyo3"]
+
+[build-dependencies]
+# The orchestrator links the C++ CPU/GPU backends built by CMake.
+# cc is used to compile/link the C ABI shims when building standalone.
+cc = "1.0"

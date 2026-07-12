@@ -1,0 +1,17 @@
+[package]
+name = "axim_core"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "axim_core"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.20.0", features = ["extension-module"] }
+cxx = "1.0"
+rclrs = "0.4.0" # Added micro-ROS PC counterpart (ROS 2 rust library)
+std_msgs = "0.4.0" # Standard messages for ROS 2
+
+[build-dependencies]
+cxx-build = "1.0"

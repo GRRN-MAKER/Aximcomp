@@ -1,0 +1,49 @@
+#version 450
+// AXIM Vulkan Compute — fused INT4 matvec (SYNAXIM Boolean-bit pipeline)
+// One invocation per output row. Runs on Nvidia/AMD/Intel via SPIR-V. Zero CUDA.
+// Build: glslangValidator -V axim_int4_matvec.comp -o ../spirv/axim_int4_matvec.spv
+
+layout(local_size_x = 64) in;
+
+layout(std430, binding = 0) readonly  buffer X      { float x[]; };
+layout(std430, binding = 1) readonly  buffer Packed { uint  packed[]; }; // 4 bytes/uint
+layout(std430, binding = 2) readonly  buffer Scales { float scales[]; };
+layout(std430, binding = 3) readonly  buffer Zeros  { float zeros[]; };
+layout(std430, binding = 4) writeonly buffer Out    { float o[]; };
+layout(push_constant) uniform Push {
+    uint out_dim;
+    uint in_dim;
+    uint group_size;
+} pc;
+
+// Extract byte `idx` from the packed uint array (4 bytes per uint word).
+uint get_byte(uint byte_index) {
+    uint word = packed[byte_index >> 2];
+    uint shift = (byte_index & 3u) * 8u;
+    return (word >> shift) & 0xFFu;
+}
+
+void main() {
+    uint row = gl_GlobalInvocationID.x;
+    if (row >= pc.out_dim) return;
+
+    uint n_groups = pc.in_dim / pc.group_size;
+    uint half = pc.in_dim / 2u;
+    float acc = 0.0;
+
+    for (uint g = 0u; g < n_groups; ++g) {
+        float s = scales[row * n_groups + g];
+        float z = zeros[row * n_groups + g];
+        uint base_col = g * pc.group_size;
+        uint base_byte = base_col / 2u;
+        uint row_byte_off = row * half + base_byte;
+        for (uint i = 0u; i < pc.group_size / 2u; ++i) {
+            uint byte = get_byte(row_byte_off + i);
+            float w_hi = float((byte >> 4u) & 0x0Fu) * s + z;  // Boolean extract
+            float w_lo = float(byte & 0x0Fu) * s + z;          // Boolean extract
+            acc += w_hi * x[base_col + i * 2u];
+            acc += w_lo * x[base_col + i * 2u + 1u];
+        }
+    }
+    o[row] = acc;
+}

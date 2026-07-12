@@ -1,0 +1,175 @@
+name: AXIM Build (CPU / GPU / Rust)
+
+# Builds AXIM on GitHub's runners so you never build on your PC:
+#   - macOS  runner: Xcode pre-installed → Metal .dylib + .metallib
+#   - Ubuntu runner: installs Vulkan SDK → SPIR-V shaders
+#   - all:           installs Rust → maturin builds the axim._native module
+# Zero CUDA anywhere.
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch: # lets you run it manually from the Actions tab
+
+jobs:
+  # ── macOS: Metal compute + graphics + metallib ──
+  build-macos:
+    name: macOS (Metal + NEON)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          clang++ --version
+          xcrun -sdk macosx metal --version || echo "metal toolchain present via Xcode"
+
+      - name: Build CPU backend (NEON) + aximBLAS + aximDNN
+        working-directory: axim_compiler/backend_cpu
+        run: |
+          mkdir -p build
+          c++ -std=c++14 -O3 -fPIC -shared -Iinclude \
+            src/axim_cpu.cpp src/axim_blas.cpp src/axim_dnn.cpp \
+            -o build/libaxim_cpu.dylib
+          ls -la build
+
+      - name: Build Metal GPU backend (live)
+        working-directory: axim_compiler/backend_gpu
+        run: |
+          mkdir -p build
+          clang++ -std=c++17 -ObjC++ -O3 -fPIC -shared \
+            -framework Metal -framework Foundation \
+            -Iinclude src/axim_metal.mm -o build/libaxim_metal.dylib
+          ls -la build
+
+      - name: Build Metal graphics backend (live)
+        working-directory: axim_compiler/graphics
+        run: |
+          mkdir -p build
+          clang++ -std=c++17 -ObjC++ -O3 -fPIC -shared \
+            -framework Metal -framework Foundation \
+            -Iinclude src/axim_gfx_metal.mm -o build/libaxim_gfx.dylib
+          ls -la build
+
+      - name: Compile Metal shaders → metallib
+        working-directory: axim_compiler/backend_gpu/shaders/metal
+        run: |
+          xcrun -sdk macosx metal -c axim_kernels.metal -o axim_kernels.air
+          xcrun -sdk macosx metallib axim_kernels.air -o axim_kernels.metallib
+          ls -la
+
+      - name: Build AXIM-HIP CUDA-compat shim
+        working-directory: axim_compiler/hip
+        run: |
+          c++ -std=c++14 -Iinclude example_cuda_port.cpp src/axim_hip.cpp -o axim_hip_demo
+          ./axim_hip_demo
+
+      - name: Run tests
+        run: |
+          python3 axim_compiler/tests/test_pipeline.py
+          python3 axim_compiler/tests/test_synaxim.py
+          python3 axim_compiler/tests/test_loader.py
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: axim-macos-metal
+          path: |
+            axim_compiler/backend_cpu/build/*.dylib
+            axim_compiler/backend_gpu/build/*.dylib
+            axim_compiler/graphics/build/*.dylib
+            axim_compiler/backend_gpu/shaders/metal/*.metallib
+
+  # ── Ubuntu: Vulkan SPIR-V + AVX2 CPU ──
+  build-linux:
+    name: Ubuntu (Vulkan + AVX2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vulkan SDK (glslang)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools libvulkan-dev vulkan-tools
+
+      - name: Build CPU backend (AVX2) + aximBLAS + aximDNN
+        working-directory: axim_compiler/backend_cpu
+        run: |
+          mkdir -p build
+          c++ -std=c++14 -O3 -mavx2 -mfma -fPIC -shared -Iinclude \
+            src/axim_cpu.cpp src/axim_blas.cpp src/axim_dnn.cpp \
+            -o build/libaxim_cpu.so
+          ls -la build
+
+      - name: Compile Vulkan compute shaders → SPIR-V
+        working-directory: axim_compiler/backend_gpu/shaders
+        run: |
+          mkdir -p spirv
+          for f in vulkan/*.comp; do
+            name=$(basename "$f" .comp)
+            glslangValidator -V "$f" -o "spirv/$name.spv"
+          done
+          ls -la spirv
+
+      - name: Build GPU backend ABI (Vulkan path)
+        working-directory: axim_compiler/backend_gpu
+        run: |
+          mkdir -p build
+          c++ -std=c++14 -O3 -DAXIM_GPU_VULKAN -fPIC -shared \
+            -Iinclude src/axim_gpu.cpp -o build/libaxim_gpu.so
+          ls -la build
+
+      - name: Build AXIM-HIP CUDA-compat shim
+        working-directory: axim_compiler/hip
+        run: |
+          c++ -std=c++14 -Iinclude example_cuda_port.cpp src/axim_hip.cpp -o axim_hip_demo
+          ./axim_hip_demo
+
+      - name: Run tests
+        run: |
+          python3 axim_compiler/tests/test_pipeline.py
+          python3 axim_compiler/tests/test_synaxim.py
+          python3 axim_compiler/tests/test_loader.py
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: axim-linux-vulkan
+          path: |
+            axim_compiler/backend_cpu/build/*.so
+            axim_compiler/backend_gpu/build/*.so
+            axim_compiler/backend_gpu/shaders/spirv/*.spv
+
+  # ── Rust orchestrator + PyO3 wheel (all platforms) ──
+  build-rust:
+    name: Rust orchestrator + maturin
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Build Rust orchestrator
+        working-directory: axim_compiler/orchestrator
+        run: cargo build --release
+
+      - name: Build Python wheel (maturin)
+        working-directory: axim_compiler
+        run: maturin build --release --features python
+        continue-on-error: true # wheel build is best-effort until backends linked
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: axim-wheel-${{ matrix.os }}
+          path: axim_compiler/target/wheels/*.whl
+        continue-on-error: true

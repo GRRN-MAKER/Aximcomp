@@ -1,0 +1,24 @@
+# Dependabot — keeps AXIM dependencies patched and secure.
+# Feeds the "Dependabot alerts" you enabled on the repo.
+version: 2
+updates:
+  # Rust (orchestrator crate)
+  - package-ecosystem: "cargo"
+    directory: "/axim_compiler/orchestrator"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "rust"]
+
+  # Python packaging
+  - package-ecosystem: "pip"
+    directory: "/axim_compiler"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "python"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "ci"]

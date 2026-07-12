@@ -1,0 +1,39 @@
+site_name: AXIM Documentation
+site_description: Universal CUDA-free compute + graphics runtime
+site_author: GRRNMAKER
+repo_url: https://github.com/GRRN-MAKER/Aximcomp
+repo_name: GRRN-MAKER/Aximcomp
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: cyan
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Architecture: architecture.md
+  - AXIM IR: ir.md
+  - Backends (CPU/GPU): backends.md
+  - Tuned Libraries (aximBLAS/aximDNN): libraries.md
+  - CUDA Porting (AXIM-HIP): cuda-porting.md
+  - Graphics & Gaming: graphics.md
+  - SYNAXIM on AXIM: synaxim.md
+  - .symb Model Loader: loader.md
+  - Building with CI: ci.md
+  - API Reference: api.md
+  - Security: security.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - tables

@@ -1,0 +1,40 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "axim"
+version = "0.1.0"
+description = "AXIM — Universal CUDA-free compute + graphics runtime. Runs any SYNAXIM model on any CPU/GPU (Nvidia, AMD, Intel, Apple) via Vulkan/Metal + AVX-512/NEON."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.9"
+authors = [{ name = "GRRNMAKER" }]
+keywords = [
+    "axim", "cuda-free", "vulkan", "metal", "simd", "inference",
+    "synaxim", "gpu", "compute", "graphics", "gaming", "heterogeneous",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: System :: Hardware",
+]
+
+[project.optional-dependencies]
+dev = ["maturin>=1.5"]
+
+[project.urls]
+Homepage = "https://github.com/GRRN-MAKER/AXIM"
+Repository = "https://github.com/GRRN-MAKER/AXIM"
+
+[project.scripts]
+aximinfo = "axim.tools.aximinfo:main"
+
+[tool.maturin]
+# The Rust orchestrator crate provides the native `axim` extension module.
+manifest-path = "orchestrator/Cargo.toml"
+module-name = "axim._native"
+features = ["pyo3/extension-module"]
