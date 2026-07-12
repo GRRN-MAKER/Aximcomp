@@ -28,7 +28,7 @@ void main() {
     if (row >= pc.out_dim) return;
 
     uint n_groups = pc.in_dim / pc.group_size;
-    uint half = pc.in_dim / 2u;
+    uint row_half = pc.in_dim / 2u;
     float acc = 0.0;
 
     for (uint g = 0u; g < n_groups; ++g) {
@@ -36,7 +36,7 @@ void main() {
         float z = zeros[row * n_groups + g];
         uint base_col = g * pc.group_size;
         uint base_byte = base_col / 2u;
-        uint row_byte_off = row * half + base_byte;
+        uint row_byte_off = row * row_half + base_byte;
         for (uint i = 0u; i < pc.group_size / 2u; ++i) {
             uint byte = get_byte(row_byte_off + i);
             float w_hi = float((byte >> 4u) & 0x0Fu) * s + z;  // Boolean extract
