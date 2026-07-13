@@ -1,0 +1,4 @@
+# AXIM benchmark notebook dependencies
+marimo>=0.9
+pandas>=2.0
+matplotlib>=3.7
