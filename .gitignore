@@ -38,3 +38,6 @@ site/
 # but kept in repo under wiki/ for reference
 .env
 *.env
+
+# marimo session cache
+__marimo__/

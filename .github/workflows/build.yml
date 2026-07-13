@@ -281,7 +281,7 @@ jobs:
     name: Real-GPU Vulkan measurement (self-hosted)
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_gpu_measure }}
     runs-on: [self-hosted, gpu]
-    timeout-minutes: 15   # fail fast instead of hanging if no GPU runner exists
+    timeout-minutes: 15 # fail fast instead of hanging if no GPU runner exists
     steps:
       - uses: actions/checkout@v4
 
