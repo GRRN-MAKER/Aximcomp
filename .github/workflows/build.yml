@@ -9,6 +9,7 @@ name: AXIM Build (CPU / GPU / Rust)
 on:
   push:
     branches: [main, master, develop]
+    tags: ["v*"] # tagging v1.0.0, v1.1.0, … builds + publishes release binaries
   pull_request:
     branches: [main, master]
   workflow_dispatch: # lets you run it manually from the Actions tab
@@ -173,3 +174,48 @@ jobs:
           name: axim-wheel-${{ matrix.os }}
           path: axim_compiler/target/wheels/*.whl
         continue-on-error: true
+
+  # ── Release: attach binaries to the GitHub Release on a v* tag ──
+  release:
+    name: Publish release binaries
+    needs: [build-macos, build-linux, build-rust]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # required to upload release assets
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Package per-platform archives
+        run: |
+          set -e
+          VER="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+
+          # macOS (Metal + NEON) — dylibs + metallib
+          if [ -d artifacts/axim-macos-metal ]; then
+            (cd artifacts/axim-macos-metal && \
+              tar -czf "$GITHUB_WORKSPACE/dist/axim-${VER}-macos-arm64.tar.gz" .)
+          fi
+
+          # Linux (Vulkan + AVX2) — .so + SPIR-V
+          if [ -d artifacts/axim-linux-vulkan ]; then
+            (cd artifacts/axim-linux-vulkan && \
+              tar -czf "$GITHUB_WORKSPACE/dist/axim-${VER}-linux-x86_64.tar.gz" .)
+          fi
+
+          # Python wheels (all OSes)
+          find artifacts -name '*.whl' -exec cp {} dist/ \; || true
+
+          # Checksums
+          (cd dist && shasum -a 256 * > SHA256SUMS.txt || sha256sum * > SHA256SUMS.txt)
+          ls -la dist
+
+      - name: Attach to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          fail_on_unmatched_files: false
