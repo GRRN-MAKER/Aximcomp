@@ -69,7 +69,9 @@ extern "C" int axim_vk_init(void) {
     VkApplicationInfo app{};
     app.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app.pApplicationName = "AXIM";
-    app.apiVersion = VK_API_VERSION_1_1;
+    /* Request 1.0 for the broadest ICD/loader compatibility (incl. Lavapipe
+     * software Vulkan on CI). The compute path uses only core 1.0 features. */
+    app.apiVersion = VK_API_VERSION_1_0;
 
     VkInstanceCreateInfo ici{};
     ici.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;

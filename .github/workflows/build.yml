@@ -140,11 +140,18 @@ jobs:
 
       - name: RUN Vulkan executor on software GPU (Lavapipe)
         working-directory: axim_compiler/backend_gpu
-        env:
-          # Force Mesa Lavapipe: a real Vulkan ICD that runs on CPU, so the
-          # full VkInstance->dispatch->readback path executes with no GPU.
-          VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
         run: |
+          # Locate the Lavapipe ICD manifest (path/name varies by distro).
+          ICD=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -1)
+          if [ -z "$ICD" ]; then
+            echo "Lavapipe ICD not found; listing available ICDs:"
+            ls -la /usr/share/vulkan/icd.d/ || true
+            ICD=$(ls /usr/share/vulkan/icd.d/*.json 2>/dev/null | head -1)
+          fi
+          echo "Using Vulkan ICD: $ICD"
+          # Both the modern and legacy env vars, so any loader version works.
+          export VK_DRIVER_FILES="$ICD"
+          export VK_ICD_FILENAMES="$ICD"
           vulkaninfo --summary 2>/dev/null | head -20 || true
           ./build/axim_vk_selftest        # exits non-zero on any mismatch
 
@@ -179,6 +186,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Python 3.12
+        # PyO3 0.20 supports up to Python 3.12; runners now default to 3.14,
+        # so pin an interpreter maturin/PyO3 can build against.
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -192,8 +206,9 @@ jobs:
       - name: Build Python wheel (maturin)
         working-directory: axim_compiler
         # build.rs links the CPU (SIMD) + GPU (emulated/Vulkan) backends into
-        # the axim._native module, so the wheel is self-contained.
-        run: maturin build --release --features python --out target/wheels
+        # the axim._native module, so the wheel is self-contained. Pin the
+        # 3.12 interpreter so PyO3 0.20 (max 3.12) builds cleanly.
+        run: maturin build --release --features python --interpreter python3.12 --out target/wheels
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
