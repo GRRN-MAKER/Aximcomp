@@ -1,6 +1,50 @@
-# AXIM OS — Universal CUDA-Free Compute + Graphics Runtime
+<div align="center">
 
-**AXIM runs any SYNAXIM AI model, and any GPU workload, on any hardware — Nvidia, AMD, Intel, or Apple silicon — with zero CUDA.**
+<img src="docs/assets/axim-logo.svg" alt="AXIM" width="420"/>
+
+# Universal CUDA-Free Compute + Graphics Runtime
+
+**Run any SYNAXIM AI model — and any GPU workload — on any hardware.**
+**NVIDIA · AMD · Intel · Apple silicon. Zero CUDA.**
+
+[![Build](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/build.yml/badge.svg)](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/build.yml)
+[![CodeQL](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/codeql.yml/badge.svg)](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/codeql.yml)
+[![Docs](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/docs.yml/badge.svg)](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/docs.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.9%2B-3776AB.svg)](https://www.python.org)
+[![Rust](https://img.shields.io/badge/rust-1.70%2B-DEA584.svg)](https://www.rust-lang.org)
+
+</div>
+
+---
+
+## Contents
+
+- [Overview](#overview)
+- [Why AXIM](#why-axim-vs-rocm--hip--sycl--zluda)
+- [Supported hardware](#supported-hardware)
+- [Repository layout](#repository-layout)
+- [Getting started](#getting-started)
+  - [Quick start](#quick-start)
+  - [Device report](#device-report)
+  - [Port CUDA code](#port-cuda-code-one-include)
+  - [Render a game frame](#render-a-game-frame)
+- [Building from source](#building-from-source)
+- [Testing](#testing)
+- [Component status](#component-status)
+- [Roadmap](#roadmap)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
+
+---
+
+## Overview
+
+AXIM is a **CUDA-free compute and graphics runtime**. You write a kernel once and it
+runs on every device — NVIDIA, AMD, Intel, and Apple silicon — for **AI inference, HPC,
+and games**, without ever depending on CUDA.
 
 ```
 GPU compute + graphics : Vulkan (SPIR-V) / Metal (MSL)   ← vendor-neutral
@@ -8,7 +52,12 @@ CPU compute            : AVX-512 / AVX2 / NEON SIMD       ← vendor-neutral
 CUDA compatibility     : AXIM-HIP shim (port CUDA in 1 #include)
 ```
 
-One kernel. Every device. For AI inference, HPC, and **games**.
+> **One kernel. Every device.**
+
+AXIM is the runtime layer of the GRRN post-transformer stack. It is purpose-built to run
+[SYNAXIM](https://github.com/GRRN-MAKER/SYNAXIM) models — including the `.symb` INT4
+weight format — while remaining a fully general compute + graphics backend for any
+workload.
 
 ---
 
@@ -28,7 +77,24 @@ AMD's ROCm/HIP translates CUDA → HIP (AMD-only). Intel's SYCL migrates CUDA �
 
 ---
 
-## Repository Layout
+## Supported hardware
+
+AXIM selects a backend at runtime based on the hardware it detects. No vendor SDK lock-in.
+
+| Vendor | Compute path | Graphics path | Status |
+|--------|--------------|---------------|--------|
+| **Apple silicon** (M1–M4) | Metal (MSL) · NEON SIMD | Metal render | ✅ verified live (M3) |
+| **NVIDIA** (GeForce/RTX/Data Center) | Vulkan (SPIR-V) | Vulkan render | 🔷 shaders ready, runtime WIP |
+| **AMD** (Radeon/Instinct) | Vulkan (SPIR-V) | Vulkan render | 🔷 shaders ready, runtime WIP |
+| **Intel** (Arc/Xe/iGPU) | Vulkan (SPIR-V) | Vulkan render | 🔷 shaders ready, runtime WIP |
+| **x86-64 CPU** (Intel/AMD) | AVX-512 / AVX2 SIMD | — | ✅ code complete |
+| **ARM CPU** (Apple/Ampere/…) | NEON SIMD | — | ✅ verified live (M3) |
+
+> Backends are picked automatically (`device="auto"`) or forced (`device="gpu"` / `"cpu"`).
+
+---
+
+## Repository layout
 
 ```
 Aximcomp/
@@ -54,7 +120,9 @@ Aximcomp/
 
 ---
 
-## Quick Start
+## Getting started
+
+### Quick start
 
 ```python
 import axim_compiler as axim
@@ -79,7 +147,7 @@ axim.run(add, [1,2,3], [4,5,6], device="auto")   # → [5,7,9]
 python3 axim_compiler/tools/aximinfo.py
 ```
 
-### Port CUDA code (1 include)
+### Port CUDA code (one include)
 
 ```cpp
 #define AXIM_HIP_CUDA_ALIASES
@@ -87,7 +155,7 @@ python3 axim_compiler/tools/aximinfo.py
 cudaMalloc(&d, n);   // → runs on AXIM (any GPU/CPU), zero CUDA
 ```
 
-### Render a game frame on the GPU
+### Render a game frame
 
 ```python
 # graphics/build/libaxim_gfx.dylib renders triangles on the Metal GPU,
@@ -96,7 +164,7 @@ cudaMalloc(&d, n);   // → runs on AXIM (any GPU/CPU), zero CUDA
 
 ---
 
-## Build
+## Building from source
 
 ```bash
 # CPU SIMD backend (NEON on ARM, AVX2/512 on x86)
@@ -122,7 +190,7 @@ cd ../.. && maturin develop --features python
 
 ---
 
-## Test
+## Testing
 
 ```bash
 python3 axim_compiler/tests/test_pipeline.py    # 12 checks — IR + dispatch
@@ -133,7 +201,9 @@ python3 axim_compiler/examples/synaxim_on_axim.py  # full layer forward
 
 ---
 
-## Status (verified on Apple M3)
+## Component status
+
+> Verified on Apple M3 (macOS, arm64).
 
 | Component | Status |
 |-----------|--------|
@@ -151,12 +221,58 @@ python3 axim_compiler/examples/synaxim_on_axim.py  # full layer forward
 
 **INT4 matvec: CPU (NEON) == GPU (Metal) exact match, zero CUDA.**
 
-### Next
-- Vulkan runtime executor (SPIR-V loader) for Nvidia/AMD/Intel live GPU
-- Wire graphics ↔ compute shared buffers (zero-copy AI-in-games)
-- `aximify` tool (search-and-replace CUDA → AXIM, HIPIFY-style)
-- maturin wheels on PyPI
+---
+
+## Roadmap
+
+- [ ] Vulkan runtime executor (SPIR-V loader) for live NVIDIA / AMD / Intel GPUs
+- [ ] Wire graphics ↔ compute shared buffers (zero-copy AI-in-games)
+- [ ] `aximify` tool (search-and-replace CUDA → AXIM, HIPIFY-style)
+- [ ] `maturin` wheels published on PyPI
+- [ ] Expanded aximBLAS / aximDNN kernel coverage
+- [ ] Windows (DirectX 12 / Vulkan) support
 
 ---
 
-*Part of the GRRN post-transformer stack. AXIM is the runtime; SYNAXIM is the engine.*
+## Documentation
+
+Full documentation is built with [MkDocs](https://www.mkdocs.org/) and published via
+GitHub Pages.
+
+- **Docs site** — see the [`docs/`](docs/) directory (`mkdocs serve` to preview locally)
+- **Wiki** — see the [`wiki/`](wiki/) directory and the repository
+  [Wiki tab](https://github.com/GRRN-MAKER/Aximcomp/wiki)
+
+Key pages: architecture overview, IR reference, the `@axim.kernel` API, backend
+internals (CPU SIMD, Metal, Vulkan), the AXIM-HIP CUDA shim, the `.symb` loader, and the
+tuned aximBLAS / aximDNN libraries.
+
+---
+
+## Contributing
+
+Contributions are welcome. Please open an issue to discuss substantial changes before
+submitting a pull request. All CI checks (build, CodeQL) must pass. See the docs for
+build prerequisites per platform.
+
+---
+
+## Security
+
+Please review our [Security Policy](SECURITY.md). Report vulnerabilities privately via
+GitHub's private vulnerability reporting — **do not** open public issues for security
+reports.
+
+---
+
+## License
+
+AXIM is released under the [Apache License 2.0](LICENSE).
+
+---
+
+<div align="center">
+
+*Part of the GRRN post-transformer stack — AXIM is the runtime; [SYNAXIM](https://github.com/GRRN-MAKER/SYNAXIM) is the engine.*
+
+</div>
