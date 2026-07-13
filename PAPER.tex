@@ -17,6 +17,11 @@
 
 \geometry{margin=1in}
 
+% Allow slightly looser inter-word spacing to avoid overfull hboxes from long
+% \texttt{} tokens and URLs (typographic warnings, not errors).
+\usepackage{microtype}
+\sloppy
+
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -39,6 +44,27 @@
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\bO}{\mathcal{O}}
 \newcommand{\norm}[1]{\left\|#1\right\|}
+
+% Look for figures both in docs/assets/ (repo layout) and the project root
+% (e.g. when images are uploaded flat to Overleaf).
+\graphicspath{{docs/assets/}{./}}
+
+% Safe include: show the image if it exists (searching common names/paths),
+% otherwise render a labelled placeholder so the document always compiles.
+\newcommand{\aximfig}[2]{%
+  % #1 = base filename (no extension), #2 = caption text
+  \IfFileExists{#1.png}{%
+    \includegraphics[width=0.8\textwidth]{#1.png}%
+  }{\IfFileExists{docs/assets/#1.png}{%
+    \includegraphics[width=0.8\textwidth]{docs/assets/#1.png}%
+  }{%
+    \fbox{\parbox{0.75\textwidth}{\centering\ttfamily\small
+      [figure: #1.png not found]\\[0.3em]
+      \normalfont\itshape #2\\[0.3em]
+      \footnotesize Generate with \texttt{scripts/make\_bench\_charts.py}
+      or upload \texttt{#1.png} to the project.}}%
+  }}%
+}
 
 \begin{document}
 
@@ -265,14 +291,14 @@ elements & CPU-NEON (ms) & GPU-Metal (ms) & CPU-NEON (M el/s) & GPU-Metal (M el/
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{docs/assets/axim_throughput.png}
+\aximfig{axim_throughput}{AXIM throughput by backend (higher is better).}
 \caption{AXIM throughput by backend (higher is better).}
 \label{fig:tput}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{docs/assets/axim_latency.png}
+\aximfig{axim_latency}{AXIM per-dispatch latency by backend (lower is better).}
 \caption{AXIM per-dispatch latency by backend (lower is better).}
 \label{fig:lat}
 \end{figure}
