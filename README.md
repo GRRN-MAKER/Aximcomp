@@ -11,6 +11,7 @@
 [![CodeQL](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/codeql.yml/badge.svg)](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/codeql.yml)
 [![Docs](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/docs.yml/badge.svg)](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/docs.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Contributing](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Python](https://img.shields.io/badge/python-3.9%2B-3776AB.svg)](https://www.python.org)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-DEA584.svg)](https://www.rust-lang.org)
 
@@ -251,9 +252,23 @@ tuned aximBLAS / aximDNN libraries.
 
 ## Contributing
 
-Contributions are welcome. Please open an issue to discuss substantial changes before
-submitting a pull request. All CI checks (build, CodeQL) must pass. See the docs for
-build prerequisites per platform.
+We welcome and encourage contributions to both the AXIM code and documentation. Please
+read the **[Contributing Guide](CONTRIBUTING.md)** before you start.
+
+In short:
+
+- **Issues** — search [existing issues](https://github.com/GRRN-MAKER/Aximcomp/issues)
+  first; if yours is new, file it with full detail (OS, CPU/GPU vendor, driver versions,
+  command output).
+- **Pull requests** — target the `main` branch, ensure your code builds, and include the
+  log of a successful test run. New features must ship with a test or example.
+- **CI** — all checks (Build, CodeQL) must pass before merge.
+- **New features** — propose them in
+  [Discussions](https://github.com/GRRN-MAKER/Aximcomp/discussions) first.
+- **Docs** — update [`docs/`](docs/) / [`wiki/`](wiki/) for any new feature or API.
+
+> By creating a PR, you agree to license your contribution under the [Apache 2.0](LICENSE)
+> terms.
 
 ---
 
