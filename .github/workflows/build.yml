@@ -285,7 +285,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Vulkan executor + self-test
+      - name: Build Vulkan executor + self-test + benchmark
         working-directory: axim_compiler/backend_gpu
         run: |
           mkdir -p shaders/spirv build
@@ -295,9 +295,13 @@ jobs:
           c++ -std=c++17 -O3 -DAXIM_BUILD_VULKAN -Iinclude \
             src/axim_vulkan_executor.cpp test_vulkan_executor.cpp \
             -lvulkan -o build/axim_vk_selftest
+          c++ -std=c++17 -O3 -DAXIM_BUILD_VULKAN -Iinclude \
+            src/axim_vulkan_executor.cpp bench_vulkan.cpp \
+            -lvulkan -o build/axim_vk_bench
 
-      - name: Run on the real GPU (native Vulkan ICD)
+      - name: Run correctness + benchmark on the real GPU
         working-directory: axim_compiler/backend_gpu
         run: |
           vulkaninfo --summary 2>/dev/null | head -30 || true
-          ./build/axim_vk_selftest   # prints the actual device name + PASS
+          ./build/axim_vk_selftest   # device name + PASS
+          ./build/axim_vk_bench      # real latency/throughput numbers
