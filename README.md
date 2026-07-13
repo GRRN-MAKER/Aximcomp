@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/axim-logo.svg" alt="AXIM" width="420"/>
+<img src="docs/assets/axim-logo.svg" alt="AXIM" width="240"/>
 
 # Universal CUDA-Free Compute + Graphics Runtime
 
