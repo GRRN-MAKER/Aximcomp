@@ -4,7 +4,7 @@
 
 # Universal CUDA-Free Compute + Graphics Runtime
 
-**Run any SYNAXIM AI model — and any GPU workload — on any hardware.**
+**Run any SYNAXIM AI model and any GPU workload  on any hardware.**
 **NVIDIA · AMD · Intel · Apple silicon. Zero CUDA.**
 
 [![Build](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/build.yml/badge.svg)](https://github.com/GRRN-MAKER/Aximcomp/actions/workflows/build.yml)
