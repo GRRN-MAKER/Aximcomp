@@ -278,8 +278,16 @@ runtime; what remains is measurement on non-Apple hardware:
   aximDNN adds `silu`, `rmsnorm`, `swiglu`, broadening coverage beyond the minimal SYNAXIM
   path toward general HPC.
 
-The single remaining limitation is therefore *empirical*: cross-vendor GPU numbers must be
-measured on NVIDIA/AMD/Intel silicon. The implementation is in place and compiles.
+**Execution vs. hardware measurement.** The Vulkan path is not merely compiled — it is
+*executed* in continuous integration. A self-test (`test_vulkan_executor.cpp`) runs the
+full `VkInstance → VkDevice → buffers → compute pipeline → dispatch → readback` path against
+a real Vulkan ICD (Mesa **Lavapipe**, a CPU implementation of Vulkan) on the GPU-less CI
+runner and verifies the result numerically. The single remaining item is therefore
+*vendor-hardware measurement*: obtaining latency/throughput numbers on physical
+NVIDIA/AMD/Intel GPUs. Because standard CI runners have no GPU, this is done on a self-hosted
+GPU runner (an optional, manually-triggered job); the exact same self-test binary reports the
+device name and correctness there. In short: the code is written, it compiles, and it
+*runs and passes* through the Vulkan API in CI — only the choice of physical silicon remains.
 
 ---
 

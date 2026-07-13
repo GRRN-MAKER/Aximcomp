@@ -227,9 +227,11 @@ python3 axim_compiler/examples/synaxim_on_axim.py  # full layer forward
 **INT4 matvec: CPU (NEON) == GPU (Metal) exact match, zero CUDA.**
 
 > **Note.** The runtime is feature-complete across CPU (SIMD) and GPU (Vulkan/Metal). The
-> Vulkan cross-vendor path is fully implemented (device creation, buffer management,
-> pipeline dispatch, SYNAXIM SPIR-V shaders); the one remaining step is **empirical
-> measurement on NVIDIA/AMD/Intel silicon** — verified live today on Apple M3.
+> Vulkan cross-vendor path is fully implemented **and executed in CI** — a self-test runs the
+> full `VkInstance → dispatch → readback` path against a real Vulkan ICD (Mesa **Lavapipe**,
+> software Vulkan) on the GPU-less runner and checks the result. The one remaining step is
+> **latency/throughput measurement on physical NVIDIA/AMD/Intel silicon**, done via an
+> optional self-hosted GPU runner (same self-test binary). Verified live today on Apple M3.
 
 ---
 

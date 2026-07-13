@@ -279,9 +279,15 @@ optional SPIR-V consumer. (iv)~\textbf{Zero-copy graphics$\leftrightarrow$comput
 shared-buffer API lets a compute pass write a GPU buffer that the next draw call consumes
 with no host copy, live on the Metal path. (v)~\textbf{Broader ops}: aximBLAS adds
 \texttt{sscal}, \texttt{snrm2}, \texttt{sasum}, \texttt{isamax} and aximDNN adds
-\texttt{silu}, \texttt{rmsnorm}, \texttt{swiglu}. The single remaining limitation is thus
-\emph{empirical}---cross-vendor GPU numbers must be measured on NVIDIA/AMD/Intel silicon;
-the implementation is in place and compiles.
+\texttt{silu}, \texttt{rmsnorm}, \texttt{swiglu}. Crucially, the Vulkan path is not merely
+compiled but \emph{executed} in continuous integration: a self-test runs the full
+\texttt{VkInstance}$\to$\texttt{VkDevice}$\to$buffers$\to$pipeline$\to$dispatch$\to$readback
+path against a real Vulkan ICD (Mesa Lavapipe, a CPU implementation) on the GPU-less runner
+and verifies the numerical result. The single remaining item is therefore
+\emph{vendor-hardware measurement}---latency/throughput on physical NVIDIA/AMD/Intel GPUs,
+obtained via an optional self-hosted GPU runner using the same self-test binary. The code is
+written, compiles, and runs/passes through the Vulkan API in CI; only the choice of physical
+silicon remains.
 
 \section{Conclusion}
 

@@ -215,10 +215,11 @@ std::vector<uint32_t> load_spirv(const char* path) {
  * This is the vendor-neutral core: it runs on NVIDIA, AMD, and Intel with
  * the same SPIR-V module, no CUDA involved.
  */
-extern "C" int axim_vk_run_spirv(const char* spirv_path,
-                                 void** buffers, const size_t* sizes,
-                                 const int* is_output, int nbuf,
-                                 uint32_t groups) {
+extern "C" int axim_vk_run_spirv_pc(const char* spirv_path,
+                                    void** buffers, const size_t* sizes,
+                                    const int* is_output, int nbuf,
+                                    uint32_t groups,
+                                    const void* push_data, uint32_t push_size) {
     if (!g_ctx.ready) { if (axim_vk_init() != 0) return -1; }
 
     std::vector<uint32_t> code = load_spirv(spirv_path);
@@ -254,10 +255,19 @@ extern "C" int axim_vk_run_spirv(const char* spirv_path,
     VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
     AXIM_VK_CHECK(vkCreateDescriptorSetLayout(g_ctx.device, &dli, nullptr, &dsl));
 
+    VkPushConstantRange pcr{};
+    pcr.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    pcr.offset = 0;
+    pcr.size = push_size;
+
     VkPipelineLayoutCreateInfo pli{};
     pli.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pli.setLayoutCount = 1;
     pli.pSetLayouts = &dsl;
+    if (push_data && push_size > 0) {
+        pli.pushConstantRangeCount = 1;
+        pli.pPushConstantRanges = &pcr;
+    }
     VkPipelineLayout playout = VK_NULL_HANDLE;
     AXIM_VK_CHECK(vkCreatePipelineLayout(g_ctx.device, &pli, nullptr, &playout));
 
@@ -318,6 +328,9 @@ extern "C" int axim_vk_run_spirv(const char* spirv_path,
     AXIM_VK_CHECK(vkBeginCommandBuffer(cmd, &bi));
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, playout, 0, 1, &dset, 0, nullptr);
+    if (push_data && push_size > 0) {
+        vkCmdPushConstants(cmd, playout, VK_SHADER_STAGE_COMPUTE_BIT, 0, push_size, push_data);
+    }
     vkCmdDispatch(cmd, groups, 1, 1);
     AXIM_VK_CHECK(vkEndCommandBuffer(cmd));
 
@@ -341,6 +354,15 @@ extern "C" int axim_vk_run_spirv(const char* spirv_path,
     vkDestroyDescriptorSetLayout(g_ctx.device, dsl, nullptr);
     vkDestroyShaderModule(g_ctx.device, shader, nullptr);
     return 0;
+}
+
+/* Convenience wrapper: dispatch with no push constants. */
+extern "C" int axim_vk_run_spirv(const char* spirv_path,
+                                 void** buffers, const size_t* sizes,
+                                 const int* is_output, int nbuf,
+                                 uint32_t groups) {
+    return axim_vk_run_spirv_pc(spirv_path, buffers, sizes, is_output,
+                                nbuf, groups, nullptr, 0);
 }
 
 #endif /* AXIM_BUILD_VULKAN */

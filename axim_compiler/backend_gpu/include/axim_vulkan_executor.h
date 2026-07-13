@@ -41,6 +41,17 @@ int axim_vk_run_spirv(const char* spirv_path,
                       const int* is_output, int nbuf,
                       uint32_t groups);
 
+/*
+ * Same as axim_vk_run_spirv but also uploads `push_size` bytes of push
+ * constant data (e.g. a uint element count) to the compute stage. Pass
+ * push_data = nullptr, push_size = 0 for shaders with no push constants.
+ */
+int axim_vk_run_spirv_pc(const char* spirv_path,
+                         void** buffers, const size_t* sizes,
+                         const int* is_output, int nbuf,
+                         uint32_t groups,
+                         const void* push_data, uint32_t push_size);
+
 #ifdef __cplusplus
 }
 #endif

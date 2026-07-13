@@ -13,6 +13,11 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch: # lets you run it manually from the Actions tab
+    inputs:
+      run_gpu_measure:
+        description: "Run the real-GPU measurement job (requires a self-hosted [gpu] runner)"
+        type: boolean
+        default: false
 
 jobs:
   # ── macOS: Metal compute + graphics + metallib ──
@@ -90,10 +95,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Vulkan SDK (glslang)
+      - name: Install Vulkan SDK + software Vulkan (Lavapipe)
         run: |
           sudo apt-get update
-          sudo apt-get install -y glslang-tools libvulkan-dev vulkan-tools
+          # glslang: compile SPIR-V; libvulkan-dev: headers/loader;
+          # mesa-vulkan-drivers: Lavapipe software Vulkan so the executor
+          # actually RUNS on a GPU-less CI runner.
+          sudo apt-get install -y glslang-tools libvulkan-dev vulkan-tools mesa-vulkan-drivers
 
       - name: Build CPU backend (AVX2) + aximBLAS + aximDNN
         working-directory: axim_compiler/backend_cpu
@@ -121,6 +129,24 @@ jobs:
           c++ -std=c++14 -O3 -DAXIM_BUILD_VULKAN -fPIC -shared \
             -Iinclude src/axim_gpu.cpp -o build/libaxim_gpu.so
           ls -la build
+
+      - name: Build Vulkan SPIR-V executor + self-test
+        working-directory: axim_compiler/backend_gpu
+        run: |
+          c++ -std=c++17 -O3 -DAXIM_BUILD_VULKAN -Iinclude \
+            src/axim_vulkan_executor.cpp test_vulkan_executor.cpp \
+            -lvulkan -o build/axim_vk_selftest
+          ls -la build/axim_vk_selftest
+
+      - name: RUN Vulkan executor on software GPU (Lavapipe)
+        working-directory: axim_compiler/backend_gpu
+        env:
+          # Force Mesa Lavapipe: a real Vulkan ICD that runs on CPU, so the
+          # full VkInstance->dispatch->readback path executes with no GPU.
+          VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+        run: |
+          vulkaninfo --summary 2>/dev/null | head -20 || true
+          ./build/axim_vk_selftest        # exits non-zero on any mismatch
 
       - name: Build AXIM-HIP CUDA-compat shim
         working-directory: axim_compiler/hip
@@ -219,3 +245,32 @@ jobs:
         with:
           files: dist/*
           fail_on_unmatched_files: false
+
+  # ── Optional: measure the Vulkan path on REAL vendor hardware ──
+  # Runs only when manually triggered with run_gpu_measure=true AND a
+  # self-hosted runner labelled [self-hosted, gpu] is registered (e.g. a box
+  # with an NVIDIA/AMD/Intel GPU). This is where cross-vendor numbers come
+  # from; standard GitHub runners have no GPU, so it is off by default.
+  gpu-measure:
+    name: Real-GPU Vulkan measurement (self-hosted)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_gpu_measure }}
+    runs-on: [self-hosted, gpu]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Vulkan executor + self-test
+        working-directory: axim_compiler/backend_gpu
+        run: |
+          mkdir -p shaders/spirv build
+          for f in shaders/vulkan/*.comp; do
+            glslangValidator -V "$f" -o "shaders/spirv/$(basename "$f" .comp).spv"
+          done
+          c++ -std=c++17 -O3 -DAXIM_BUILD_VULKAN -Iinclude \
+            src/axim_vulkan_executor.cpp test_vulkan_executor.cpp \
+            -lvulkan -o build/axim_vk_selftest
+
+      - name: Run on the real GPU (native Vulkan ICD)
+        working-directory: axim_compiler/backend_gpu
+        run: |
+          vulkaninfo --summary 2>/dev/null | head -30 || true
+          ./build/axim_vk_selftest   # prints the actual device name + PASS
