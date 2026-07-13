@@ -11,16 +11,20 @@ fn main() {
         .unwrap()
         .to_path_buf();
 
-    let cpu_src = root.join("backend_cpu/src/axim_cpu.cpp");
     let cpu_inc = root.join("backend_cpu/include");
+    let cpu_src = root.join("backend_cpu/src/axim_cpu.cpp");
+    let blas_src = root.join("backend_cpu/src/axim_blas.cpp");
+    let dnn_src = root.join("backend_cpu/src/axim_dnn.cpp");
     let gpu_src = root.join("backend_gpu/src/axim_gpu.cpp");
     let gpu_inc = root.join("backend_gpu/include");
 
-    // ── CPU backend (SIMD) ──
+    // ── CPU backend (SIMD) + aximBLAS + aximDNN ──
     let mut cpu = cc::Build::new();
     cpu.cpp(true).std("c++14").opt_level(3)
         .include(&cpu_inc)
-        .file(&cpu_src);
+        .file(&cpu_src)
+        .file(&blas_src)
+        .file(&dnn_src);
     if cfg!(target_arch = "x86_64") {
         cpu.flag_if_supported("-mavx2");
         cpu.flag_if_supported("-mfma");
@@ -35,5 +39,7 @@ fn main() {
         .compile("axim_gpu_static");
 
     println!("cargo:rerun-if-changed={}", cpu_src.display());
+    println!("cargo:rerun-if-changed={}", blas_src.display());
+    println!("cargo:rerun-if-changed={}", dnn_src.display());
     println!("cargo:rerun-if-changed={}", gpu_src.display());
 }

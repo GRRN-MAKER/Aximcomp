@@ -52,6 +52,52 @@ int axim_gfx_render_frame(const float* vertices, int vertex_count,
 /* Report the GPU device backing graphics (shared with AXIM compute). */
 const char* axim_gfx_device_name(void);
 
+/*
+ * ── Zero-copy shared buffers (AI-in-games) ────────────────────────────
+ * A shared buffer lives in GPU memory and is usable by BOTH an AXIM
+ * compute kernel and the render pipeline WITHOUT a host round-trip. This
+ * is the mechanism that lets a compute pass (e.g. SYNAXIM inference or
+ * GPU physics) write results that the very next draw call consumes as
+ * vertex/instance data on the same queue — no CPU copy, no CUDA interop.
+ *
+ * Typical loop:
+ *   h = axim_gfx_shared_alloc(n_bytes);
+ *   axim_gfx_shared_upload(h, initial, n_bytes);      // optional seed
+ *   axim_gfx_compute_into(h, "spirv/axim_swiglu.spv", groups); // GPU writes
+ *   axim_gfx_render_shared(h, vertex_count, r,g,b,a, out);      // GPU reads
+ *   ...                                                // repeat, zero copies
+ *   axim_gfx_shared_free(h);
+ */
+typedef uint64_t axim_gfx_buffer_t;   /* opaque handle; 0 = invalid */
+
+/* Allocate a GPU-resident buffer shared between compute and render. */
+axim_gfx_buffer_t axim_gfx_shared_alloc(size_t n_bytes);
+
+/* Optional: seed a shared buffer from host memory (one-time). */
+int  axim_gfx_shared_upload(axim_gfx_buffer_t h, const void* src, size_t n_bytes);
+
+/* Optional: read a shared buffer back to host (debug / checkpoint). */
+int  axim_gfx_shared_download(axim_gfx_buffer_t h, void* dst, size_t n_bytes);
+
+/*
+ * Run a compute shader that writes directly into shared buffer `h`, on the
+ * same device/queue as rendering. `shader_path` is a SPIR-V (.spv) or, on
+ * Metal, a named kernel in the loaded metallib. No host copy occurs.
+ */
+int  axim_gfx_compute_into(axim_gfx_buffer_t h, const char* shader_path, uint32_t groups);
+
+/*
+ * Render a frame whose vertex data IS the shared buffer `h` — the buffer a
+ * compute pass just wrote — with no intervening CPU copy. Same semantics as
+ * axim_gfx_render_frame otherwise.
+ */
+int  axim_gfx_render_shared(axim_gfx_buffer_t h, int vertex_count,
+                            float r, float g, float b, float a,
+                            uint8_t* out_pixels);
+
+/* Free a shared buffer. */
+void axim_gfx_shared_free(axim_gfx_buffer_t h);
+
 #ifdef __cplusplus
 }
 #endif

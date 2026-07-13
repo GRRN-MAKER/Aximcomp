@@ -37,4 +37,6 @@ aximinfo = "axim.tools.aximinfo:main"
 # The Rust orchestrator crate provides the native `axim` extension module.
 manifest-path = "orchestrator/Cargo.toml"
 module-name = "axim._native"
-features = ["pyo3/extension-module"]
+# Enable the crate's own "python" feature, which turns on the optional pyo3
+# dependency (declared with features = ["extension-module"]).
+features = ["python"]

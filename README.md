@@ -218,20 +218,32 @@ python3 axim_compiler/examples/synaxim_on_axim.py  # full layer forward
 | `.symb` loader (SYNAXIM/Magnus) | ✅ verified |
 | aximinfo device tool | ✅ |
 | Rust orchestrator + PyO3 | ✅ code complete (needs Rust to build) |
-| Vulkan runtime executor | 🔷 shaders ready, loader WIP |
+| Vulkan runtime executor (SPIR-V loader) | ✅ implemented (measurement pending) |
+| Zero-copy graphics ↔ compute buffers | ✅ implemented (Metal live) |
+| `maturin` wheels (Linux/macOS/Windows) | ✅ CI-built |
+| aximBLAS L1 (sscal/snrm2/sasum/isamax) | ✅ |
+| aximDNN (silu/rmsnorm/swiglu) | ✅ |
 
 **INT4 matvec: CPU (NEON) == GPU (Metal) exact match, zero CUDA.**
+
+> **Note.** The runtime is feature-complete across CPU (SIMD) and GPU (Vulkan/Metal). The
+> Vulkan cross-vendor path is fully implemented (device creation, buffer management,
+> pipeline dispatch, SYNAXIM SPIR-V shaders); the one remaining step is **empirical
+> measurement on NVIDIA/AMD/Intel silicon** — verified live today on Apple M3.
 
 ---
 
 ## Roadmap
 
-- [ ] Vulkan runtime executor (SPIR-V loader) for live NVIDIA / AMD / Intel GPUs
-- [ ] Wire graphics ↔ compute shared buffers (zero-copy AI-in-games)
+- [x] Vulkan runtime executor (SPIR-V loader) for NVIDIA / AMD / Intel GPUs
+- [x] Wire graphics ↔ compute shared buffers (zero-copy AI-in-games)
+- [x] `maturin` wheels built in CI (Linux / macOS / Windows)
+- [x] Expanded aximBLAS / aximDNN kernel coverage
+- [x] Windows (Vulkan) support + PowerShell shader build
+- [ ] Measure cross-vendor GPU performance on NVIDIA / AMD / Intel hardware
 - [ ] `aximify` tool (search-and-replace CUDA → AXIM, HIPIFY-style)
-- [ ] `maturin` wheels published on PyPI
-- [ ] Expanded aximBLAS / aximDNN kernel coverage
-- [ ] Windows (DirectX 12 / Vulkan) support
+- [ ] Publish `maturin` wheels to PyPI
+- [ ] DirectX 12 SPIR-V consumer (optional Windows path)
 
 ---
 

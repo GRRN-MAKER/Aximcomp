@@ -121,3 +121,37 @@ void axim_sgemm(int M, int N, int K, float alpha,
         }
     }
 }
+
+/* ── BLAS Level-1 completions ──
+ * Portable, -O3 auto-vectorized. Kept simple and correct; the compiler
+ * generates AVX/NEON here just as for the hand-tuned kernels above. */
+#include <cmath>
+
+extern "C" void axim_sscal(int n, float alpha, float* x) {
+    for (int i = 0; i < n; ++i) x[i] *= alpha;
+}
+
+extern "C" float axim_snrm2(int n, const float* x) {
+    /* two-pass-free, overflow-aware would use scaling; this is the common
+     * fast path used across BLAS for well-scaled inputs. */
+    double s = 0.0;
+    for (int i = 0; i < n; ++i) s += (double)x[i] * (double)x[i];
+    return (float)std::sqrt(s);
+}
+
+extern "C" float axim_sasum(int n, const float* x) {
+    double s = 0.0;
+    for (int i = 0; i < n; ++i) s += std::fabs((double)x[i]);
+    return (float)s;
+}
+
+extern "C" int axim_isamax(int n, const float* x) {
+    if (n <= 0) return -1;
+    int best = 0;
+    float bestv = std::fabs(x[0]);
+    for (int i = 1; i < n; ++i) {
+        float v = std::fabs(x[i]);
+        if (v > bestv) { bestv = v; best = i; }
+    }
+    return best;
+}

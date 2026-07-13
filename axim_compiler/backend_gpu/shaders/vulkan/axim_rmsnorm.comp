@@ -1,0 +1,42 @@
+#version 450
+// AXIM Vulkan Compute — RMSNorm (SYNAXIM layer norm)
+// One workgroup normalizes one vector of length `dim`. Runs on
+// Nvidia/AMD/Intel via SPIR-V. Zero CUDA.
+// Build: glslangValidator -V axim_rmsnorm.comp -o ../spirv/axim_rmsnorm.spv
+
+layout(local_size_x = 256) in;
+
+layout(std430, binding = 0) readonly  buffer X      { float x[]; };
+layout(std430, binding = 1) readonly  buffer Weight { float w[]; };
+layout(std430, binding = 2) writeonly buffer Out    { float o[]; };
+layout(push_constant) uniform Push {
+    uint  dim;
+    float eps;
+} pc;
+
+shared float partial[256];
+
+void main() {
+    uint tid = gl_LocalInvocationID.x;
+
+    // sum of squares (grid-stride within one workgroup)
+    float ss = 0.0;
+    for (uint i = tid; i < pc.dim; i += gl_WorkGroupSize.x) {
+        ss += x[i] * x[i];
+    }
+    partial[tid] = ss;
+    barrier();
+
+    // tree reduction
+    for (uint stride = gl_WorkGroupSize.x / 2u; stride > 0u; stride >>= 1u) {
+        if (tid < stride) partial[tid] += partial[tid + stride];
+        barrier();
+    }
+
+    float inv_rms = inversesqrt(partial[0] / float(pc.dim) + pc.eps);
+    barrier();
+
+    for (uint i = tid; i < pc.dim; i += gl_WorkGroupSize.x) {
+        o[i] = x[i] * inv_rms * w[i];
+    }
+}

@@ -40,6 +40,20 @@ void axim_saxpy(int n, float alpha, const float* x, float* y);
 /* dot product of x and y */
 float axim_sdot(int n, const float* x, const float* y);
 
+/* ── BLAS Level-1 completions (general HPC coverage) ── */
+
+/* x = alpha * x  (in place scale) */
+void  axim_sscal(int n, float alpha, float* x);
+
+/* Euclidean norm ||x||_2 */
+float axim_snrm2(int n, const float* x);
+
+/* sum of absolute values  Σ|x_i| */
+float axim_sasum(int n, const float* x);
+
+/* index of the element with the largest absolute value */
+int   axim_isamax(int n, const float* x);
+
 #ifdef __cplusplus
 }
 #endif

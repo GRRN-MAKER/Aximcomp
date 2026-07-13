@@ -76,3 +76,30 @@ void axim_attention_step(const float* q, const float* K, const float* V,
 
     if (seq_len > 1024) delete[] scores;
 }
+
+/* ── aximDNN completions: SiLU, RMSNorm, SwiGLU ── */
+#include <cmath>
+
+extern "C" void axim_silu(const float* x, float* out, int n) {
+    for (int i = 0; i < n; ++i) {
+        float v = x[i];
+        out[i] = v / (1.0f + std::exp(-v));   /* v * sigmoid(v) */
+    }
+}
+
+extern "C" void axim_rmsnorm(const float* x, const float* weight,
+                             float* out, int n, float eps) {
+    double ss = 0.0;
+    for (int i = 0; i < n; ++i) ss += (double)x[i] * (double)x[i];
+    float inv_rms = 1.0f / std::sqrt((float)(ss / (double)n) + eps);
+    for (int i = 0; i < n; ++i) out[i] = x[i] * inv_rms * weight[i];
+}
+
+extern "C" void axim_swiglu(const float* gate, const float* up,
+                            float* out, int n) {
+    for (int i = 0; i < n; ++i) {
+        float g = gate[i];
+        float silu = g / (1.0f + std::exp(-g));
+        out[i] = silu * up[i];
+    }
+}

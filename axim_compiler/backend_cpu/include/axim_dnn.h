@@ -31,6 +31,16 @@ void axim_layernorm(const float* x, const float* gamma, const float* beta,
 /* GELU activation (tanh approximation), elementwise. */
 void axim_gelu(const float* x, float* out, int n);
 
+/* SiLU / swish activation: out = x * sigmoid(x), elementwise. */
+void axim_silu(const float* x, float* out, int n);
+
+/* RMSNorm (SYNAXIM): out = x / sqrt(mean(x^2) + eps) * weight. */
+void axim_rmsnorm(const float* x, const float* weight,
+                  float* out, int n, float eps);
+
+/* SwiGLU: out = silu(gate) * up, elementwise (length n). */
+void axim_swiglu(const float* gate, const float* up, float* out, int n);
+
 /*
  * Single-token scaled dot-product attention against a running K/V cache.
  *   q:     (d_head)

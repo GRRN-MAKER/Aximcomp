@@ -165,15 +165,15 @@ jobs:
 
       - name: Build Python wheel (maturin)
         working-directory: axim_compiler
-        run: maturin build --release --features python
-        continue-on-error: true # wheel build is best-effort until backends linked
+        # build.rs links the CPU (SIMD) + GPU (emulated/Vulkan) backends into
+        # the axim._native module, so the wheel is self-contained.
+        run: maturin build --release --features python --out target/wheels
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: axim-wheel-${{ matrix.os }}
           path: axim_compiler/target/wheels/*.whl
-        continue-on-error: true
 
   # ── Release: attach binaries to the GitHub Release on a v* tag ──
   release:

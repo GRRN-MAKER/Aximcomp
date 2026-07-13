@@ -1,0 +1,20 @@
+#version 450
+// AXIM Vulkan Compute — SwiGLU MLP activation (SYNAXIM)
+//   out[i] = silu(gate[i]) * up[i],  silu(v) = v * sigmoid(v)
+// One invocation per element. Runs on Nvidia/AMD/Intel via SPIR-V. Zero CUDA.
+// Build: glslangValidator -V axim_swiglu.comp -o ../spirv/axim_swiglu.spv
+
+layout(local_size_x = 256) in;
+
+layout(std430, binding = 0) readonly  buffer Gate { float gate[]; };
+layout(std430, binding = 1) readonly  buffer Up   { float up[]; };
+layout(std430, binding = 2) writeonly buffer Out  { float o[]; };
+layout(push_constant) uniform Push { uint n; } pc;
+
+void main() {
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= pc.n) return;
+    float g = gate[i];
+    float silu = g / (1.0 + exp(-g));   // g * sigmoid(g)
+    o[i] = silu * up[i];
+}

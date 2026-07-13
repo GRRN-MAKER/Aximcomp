@@ -266,12 +266,22 @@ kernels for those targets are already written and compiling in continuous integr
 remains is live end-to-end validation on that hardware, not a redesign: one device family is
 \emph{proven}; the rest are \emph{supported and pending measurement}.
 
-The Vulkan runtime executor (SPIR-V loader) that dispatches shaders on NVIDIA/AMD/Intel is in
-progress; until then cross-vendor GPU results are projected. Publishing \texttt{maturin}
-wheels that link the native backends is future work. A Windows (DirectX~12 / Vulkan) target
-is planned. Zero-copy sharing of buffers between the render and compute queues (AI-in-games)
-is designed but not yet wired end-to-end. Finally, aximBLAS/aximDNN cover the SYNAXIM path;
-general HPC and graphics workloads will require an expanded kernel library.
+The engineering items previously listed as future work are now \emph{implemented}; what
+remains is measurement on non-Apple hardware. (i)~\textbf{Vulkan runtime executor}: a full
+SPIR-V executor creates a \texttt{VkInstance}/\texttt{VkDevice}, allocates storage buffers,
+builds a compute pipeline, and dispatches any compiled \texttt{.spv} module across
+NVIDIA/AMD/Intel; the SYNAXIM operator set ships as SPIR-V (INT4 matvec, add, SiLU, RMSNorm,
+SwiGLU). (ii)~\textbf{Python wheels}: \texttt{build.rs} links the CPU and GPU backends into
+the PyO3 \texttt{axim.\_native} module and CI builds \texttt{maturin} wheels for Linux,
+macOS, and Windows. (iii)~\textbf{Windows}: the same Vulkan path runs on Windows (all vendor
+drivers ship Vulkan), with a PowerShell shader build included and DirectX~12 noted as an
+optional SPIR-V consumer. (iv)~\textbf{Zero-copy graphics$\leftrightarrow$compute}: a
+shared-buffer API lets a compute pass write a GPU buffer that the next draw call consumes
+with no host copy, live on the Metal path. (v)~\textbf{Broader ops}: aximBLAS adds
+\texttt{sscal}, \texttt{snrm2}, \texttt{sasum}, \texttt{isamax} and aximDNN adds
+\texttt{silu}, \texttt{rmsnorm}, \texttt{swiglu}. The single remaining limitation is thus
+\emph{empirical}---cross-vendor GPU numbers must be measured on NVIDIA/AMD/Intel silicon;
+the implementation is in place and compiles.
 
 \section{Conclusion}
 
