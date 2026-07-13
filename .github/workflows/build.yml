@@ -262,14 +262,26 @@ jobs:
           fail_on_unmatched_files: false
 
   # ── Optional: measure the Vulkan path on REAL vendor hardware ──
-  # Runs only when manually triggered with run_gpu_measure=true AND a
-  # self-hosted runner labelled [self-hosted, gpu] is registered (e.g. a box
-  # with an NVIDIA/AMD/Intel GPU). This is where cross-vendor numbers come
-  # from; standard GitHub runners have no GPU, so it is off by default.
+  #
+  # This is the ONE thing free GitHub runners cannot do: they have no GPU.
+  # To get real NVIDIA / AMD / Intel latency numbers, run this job on a
+  # machine that actually has a GPU. Three ways to enable it:
+  #
+  #   1. Self-hosted runner (free): on a PC/server with a GPU, install the
+  #      GitHub Actions runner and give it the labels `self-hosted` + `gpu`.
+  #      Repo → Settings → Actions → Runners → New self-hosted runner.
+  #   2. Cloud GPU VM: spin up a GPU instance (any cloud), register it as a
+  #      self-hosted runner with the same labels, tear it down after.
+  #   3. GitHub-hosted GPU runners (paid): enable billing and change
+  #      `runs-on` below to a GPU runner label (e.g. a `gpu`-class runner).
+  #
+  # Trigger: Actions tab → "Run workflow" → set run_gpu_measure = true.
+  # It is OFF by default and time-boxed so it never blocks normal CI.
   gpu-measure:
     name: Real-GPU Vulkan measurement (self-hosted)
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_gpu_measure }}
     runs-on: [self-hosted, gpu]
+    timeout-minutes: 15   # fail fast instead of hanging if no GPU runner exists
     steps:
       - uses: actions/checkout@v4
 
