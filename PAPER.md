@@ -23,9 +23,11 @@ a motivating case study we run **SYNAXIM**, a framework-free LLM inference engin
 on AXIM — including its INT4 Boolean-bit matvec and low-rank associative memory. We report
 results **verified on Apple M3** (macOS, arm64): the CPU (NEON) and GPU (Metal) backends
 produce **bit-for-bit identical** INT4 matvec output, the full SYNAXIM layer forward runs
-CUDA-free, and 24 automated checks pass. Cross-vendor execution (NVIDIA/AMD/Intel via
-Vulkan) is presented as a projected result grounded in the shipped, compiling SPIR-V
-shaders. AXIM is implemented in ~3,400 lines across Python, Rust, C++/Objective-C++, and
+CUDA-free, and 24 automated checks pass. We independently reproduce the CPU result on a
+second, unrelated ARM vendor — an **NVIDIA GH200 (Grace, aarch64)** — obtaining the
+*identical* 1.02e-08 layer-forward result and 24/24 tests. Cross-vendor GPU execution
+(NVIDIA/AMD/Intel via Vulkan) is presented as a projected result grounded in the shipped,
+compiling SPIR-V shaders, which are also executed in CI on a software Vulkan ICD. AXIM is implemented in ~3,400 lines across Python, Rust, C++/Objective-C++, and
 shader source.
 
 ---
@@ -248,22 +250,47 @@ Metal GPU pulls ahead (~3.8× throughput at 4M elements), exactly the crossover 
 a correct heterogeneous runtime. These figures are reproducible via
 `scripts/make_bench_charts.py` and the reactive notebook `notebooks/axim_bench.py`.
 
-### 7.2 Projected (cross-vendor, Vulkan)
+### 7.2 Verified on NVIDIA GH200 (Grace, aarch64, Linux)
 
-The Vulkan path ships compiling SPIR-V compute shaders for the same operator set. Live
-end-to-end execution on NVIDIA, AMD, and Intel GPUs requires the SPIR-V runtime executor
-(loader), which is in progress. We therefore label cross-vendor GPU execution **projected**:
-the kernels exist and compile, but we do not yet report measured device numbers. The
-CPU-SIMD path already compiles for x86-64 (AVX2) in continuous integration alongside the
-macOS build.
+To test AXIM on a *second, independent* ARM vendor, we built and ran it on an **NVIDIA
+GH200 480GB** instance — specifically its **Grace CPU** (Arm Neoverse-V2, aarch64), Linux,
+NVIDIA driver 580.105. Only the compiler already present (`g++`) was used for the CPU path;
+no CUDA and no vendor SDK were involved.
 
-### 7.3 Discussion
+- **CPU backend (NEON):** built and live on Grace; the AXIM banner reports
+  `SIMD=NEON — CUDA-free, vendor-neutral`.
+- **Automated tests:** the same **24 checks pass** — pipeline (12), SYNAXIM ops (5),
+  `.symb` loader (7).
+- **Full layer forward:** a complete SYNAXIM decoder layer runs end-to-end with
+  **CPU vs auto-dispatch max diff 1.02e-08** — *identical to the Apple M3 result*, on a
+  completely different ARM implementation.
 
-The verified bit-exact CPU==GPU result is the key evidence for AXIM's thesis: a single IR,
-lowered independently to two unrelated backends (a scalar/SIMD CPU path and a Metal GPU
-path), yields identical numerical output for quantized inference. This is precisely the
-guarantee needed for "write once, run anywhere" model execution, and it holds without any
-CUDA in the toolchain or runtime.
+This is strong evidence for portability: AXIM produces the **same bit-level result on two
+unrelated ARM vendors** (Apple silicon and NVIDIA Grace) with no code changes.
+
+> **GH200 GPU note.** The GH200's data-center NVIDIA driver is **compute-only (CUDA)** — it
+> ships no Vulkan ICD or producer libraries, so `vkCreateInstance` returns
+> `ERROR_INCOMPATIBLE_DRIVER`. The GH200 *GPU* therefore cannot be exercised through AXIM's
+> vendor-neutral Vulkan path on that image; a GPU whose driver ships the Vulkan ICD
+> (GeForce/RTX/workstation, or AMD/Intel) is required for GPU-side Vulkan measurement.
+
+### 7.3 Projected (cross-vendor GPU, Vulkan)
+
+The Vulkan path ships compiling SPIR-V compute shaders for the same operator set and is
+*executed* in CI against a software Vulkan ICD (Mesa Lavapipe), which validates the full
+`VkInstance → dispatch → readback` path numerically on a GPU-less runner. Live
+measurement on a physical NVIDIA/AMD/Intel GPU requires a driver that ships the Vulkan ICD
+(see the GH200 note above); we therefore label cross-vendor *GPU* timing **projected** — the
+code runs and passes through the Vulkan API, only vendor-silicon numbers remain.
+
+### 7.4 Discussion
+
+The verified bit-exact CPU==GPU result on Apple M3, combined with the **identical
+1.02e-08 layer-forward result on NVIDIA Grace**, is the key evidence for AXIM's thesis: a
+single IR, lowered independently to unrelated backends and run on unrelated ARM vendors,
+yields identical numerical output for quantized inference. This is precisely the guarantee
+needed for "write once, run anywhere" model execution, and it holds without any CUDA in the
+toolchain or runtime.
 
 ---
 

@@ -89,7 +89,7 @@ AXIM selects a backend at runtime based on the hardware it detects. No vendor SD
 | **AMD** (Radeon/Instinct) | Vulkan (SPIR-V) | Vulkan render | 🔷 shaders ready, runtime WIP |
 | **Intel** (Arc/Xe/iGPU) | Vulkan (SPIR-V) | Vulkan render | 🔷 shaders ready, runtime WIP |
 | **x86-64 CPU** (Intel/AMD) | AVX-512 / AVX2 SIMD | — | ✅ code complete |
-| **ARM CPU** (Apple/Ampere/…) | NEON SIMD | — | ✅ verified live (M3) |
+| **ARM CPU** (Apple/Ampere/NVIDIA Grace) | NEON SIMD | — | ✅ verified live (Apple M3 **+ NVIDIA GH200 Grace**) |
 
 > Backends are picked automatically (`device="auto"`) or forced (`device="gpu"` / `"cpu"`).
 
