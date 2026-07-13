@@ -1,38 +1,39 @@
 import marimo
 
-__generated_with = "0.9.0"
+__generated_with = "0.23.14"
 app = marimo.App(width="medium")
 
 
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # AXIM Benchmark Explorer
+    mo.md(r"""
+    # AXIM Benchmark Explorer
 
-        Interactive report for **AXIM** — the CUDA-free compute + graphics runtime.
-        Compare correctness and performance of the same kernel across backends:
+    Interactive report for **AXIM** — the CUDA-free compute + graphics runtime.
+    Compare correctness and performance of the same kernel across backends:
 
-        - **CPU (SIMD)** — AVX-512 / AVX2 / NEON
-        - **GPU (Metal)** — Apple silicon (verified on M3)
-        - **GPU (Vulkan)** — NVIDIA / AMD / Intel (paste your `axim_vk_bench` numbers below)
+    - **CPU (SIMD)** — AVX-512 / AVX2 / NEON
+    - **GPU (Metal)** — Apple silicon (verified on M3)
+    - **GPU (Vulkan)** — NVIDIA / AMD / Intel (paste your `axim_vk_bench` numbers below)
 
-        > Reactive notebook: edit the data cell and every chart updates automatically.
-        > Run with `marimo edit notebooks/axim_bench.py` or `marimo run notebooks/axim_bench.py`.
-        """
-    )
+    > Reactive notebook: edit the data cell and every chart updates automatically.
+    > Run with `marimo edit notebooks/axim_bench.py` or `marimo run notebooks/axim_bench.py`.
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## 1. Paste benchmark data""")
+    mo.md(r"""
+    ## 1. Paste benchmark data
+    """)
     return
 
 
@@ -67,7 +68,7 @@ def _(RAW):
     df = pd.DataFrame(RAW, columns=["backend", "device", "elements", "avg_ms"])
     # Derived metric: millions of elements processed per second.
     df["m_elem_per_s"] = (df["elements"] / (df["avg_ms"] / 1000.0)) / 1e6
-    return df, pd
+    return (df,)
 
 
 @app.cell
@@ -78,12 +79,14 @@ def _(df, mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"""## 2. Throughput by backend (higher is better)""")
+    mo.md(r"""
+    ## 2. Throughput by backend (higher is better)
+    """)
     return
 
 
 @app.cell
-def _(df, mo):
+def _(df):
     # marimo renders matplotlib figures natively; matplotlib is broadly available.
     import matplotlib.pyplot as plt
 
@@ -98,17 +101,19 @@ def _(df, mo):
     ax1.legend()
     ax1.grid(True, alpha=0.3)
     fig1
-    return plt,
+    return (plt,)
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""## 3. Latency by backend (lower is better)""")
+    mo.md(r"""
+    ## 3. Latency by backend (lower is better)
+    """)
     return
 
 
 @app.cell
-def _(df, mo, plt):
+def _(df, plt):
     fig2, ax2 = plt.subplots(figsize=(7, 4))
     for _backend, _g in df.groupby("backend"):
         _g = _g.sort_values("elements")
@@ -126,22 +131,20 @@ def _(df, mo, plt):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        ## 4. How to get the Vulkan numbers
+    mo.md(r"""
+    ## 4. How to get the Vulkan numbers
 
-        On a machine with an NVIDIA / AMD / Intel GPU (e.g. your cloud instance):
+    On a machine with an NVIDIA / AMD / Intel GPU (e.g. your cloud instance):
 
-        ```bash
-        curl -fsSL https://raw.githubusercontent.com/GRRN-MAKER/Aximcomp/main/scripts/run_gpu_bench.sh | bash
-        ```
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/GRRN-MAKER/Aximcomp/main/scripts/run_gpu_bench.sh | bash
+    ```
 
-        Copy the `axim_vk_bench` table (device name + elements + avg ms/dispatch) into the
-        **data cell** above. The charts update automatically — no re-run needed.
+    Copy the `axim_vk_bench` table (device name + elements + avg ms/dispatch) into the
+    **data cell** above. The charts update automatically — no re-run needed.
 
-        *Zero CUDA. The Vulkan path is vendor-neutral: the same SPIR-V runs on NVIDIA, AMD, and Intel.*
-        """
-    )
+    *Zero CUDA. The Vulkan path is vendor-neutral: the same SPIR-V runs on NVIDIA, AMD, and Intel.*
+    """)
     return
 
 

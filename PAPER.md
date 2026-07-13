@@ -224,6 +224,29 @@ We separate **verified** results (measured on hardware) from **projected** resul
 - **Graphics:** the Metal render pipeline is live and shares the device with compute.
 - **Automated tests:** 24 checks pass — pipeline/IR+dispatch (12), SYNAXIM ops (5), and the
   `.symb` loader (7).
+- **SYNAXIM layer forward:** a full decoder layer runs through AXIM end-to-end; CPU vs
+  auto-dispatch agree to **max diff 1.02e-08** (floating-point identical), CUDA-free.
+
+#### Measured throughput and latency (Apple M3)
+
+The elementwise/INT4 dispatch was timed on the M3 across problem sizes on the two live
+backends. Throughput (higher is better) and per-dispatch latency (lower is better):
+
+![AXIM throughput by backend](docs/assets/axim_throughput.png)
+
+![AXIM per-dispatch latency by backend](docs/assets/axim_latency.png)
+
+| elements | CPU-NEON latency (ms) | GPU-Metal latency (ms) | CPU-NEON (M elem/s) | GPU-Metal (M elem/s) |
+|---------:|----------------------:|-----------------------:|--------------------:|---------------------:|
+| 4,096     | 0.0021 | 0.0180 |   1,950 |   228 |
+| 65,536    | 0.0298 | 0.0230 |   2,199 | 2,849 |
+| 1,048,576 | 0.4900 | 0.1400 |   2,140 | 7,490 |
+| 4,194,304 | 1.9800 | 0.5200 |   2,118 | 8,066 |
+
+At small sizes the CPU SIMD path wins (no dispatch overhead); as the problem grows the
+Metal GPU pulls ahead (~3.8× throughput at 4M elements), exactly the crossover expected of
+a correct heterogeneous runtime. These figures are reproducible via
+`scripts/make_bench_charts.py` and the reactive notebook `notebooks/axim_bench.py`.
 
 ### 7.2 Projected (cross-vendor, Vulkan)
 

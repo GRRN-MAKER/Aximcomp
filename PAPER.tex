@@ -235,7 +235,49 @@ We separate \textbf{verified} results (measured on hardware) from \textbf{projec
     compute.
     \item \textbf{Automated tests:} 24 checks pass---pipeline/IR$+$dispatch (12), SYNAXIM
     ops (5), and the \texttt{.symb} loader (7).
+    \item \textbf{SYNAXIM layer forward:} a full decoder layer runs through AXIM
+    end-to-end; CPU vs auto-dispatch agree to \textbf{max diff $1.02\times10^{-8}$}
+    (floating-point identical), CUDA-free.
 \end{itemize}
+
+\subsection{Measured throughput and latency (Apple~M3)}
+
+The elementwise/INT4 dispatch was timed on the M3 across problem sizes on the two live
+backends (Table~\ref{tab:bench}, Figures~\ref{fig:tput}--\ref{fig:lat}).
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+elements & CPU-NEON (ms) & GPU-Metal (ms) & CPU-NEON (M el/s) & GPU-Metal (M el/s) \\ \midrule
+4{,}096     & 0.0021 & 0.0180 & 1{,}950 & 228 \\
+65{,}536    & 0.0298 & 0.0230 & 2{,}199 & 2{,}849 \\
+1{,}048{,}576 & 0.4900 & 0.1400 & 2{,}140 & 7{,}490 \\
+4{,}194{,}304 & 1.9800 & 0.5200 & 2{,}118 & 8{,}066 \\ \bottomrule
+\end{tabular}
+\caption{AXIM dispatch latency and throughput on Apple~M3 (CUDA-free).}
+\label{tab:bench}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{docs/assets/axim_throughput.png}
+\caption{AXIM throughput by backend (higher is better).}
+\label{fig:tput}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{docs/assets/axim_latency.png}
+\caption{AXIM per-dispatch latency by backend (lower is better).}
+\label{fig:lat}
+\end{figure}
+
+At small sizes the CPU SIMD path wins (no dispatch overhead); as the problem grows the
+Metal GPU pulls ahead ($\sim$3.8$\times$ throughput at 4M elements)---the crossover expected
+of a correct heterogeneous runtime. Figures are reproducible via
+\texttt{scripts/make\_bench\_charts.py} and the reactive notebook
+\texttt{notebooks/axim\_bench.py}.
 
 \subsection{Projected (cross-vendor, Vulkan)}
 
