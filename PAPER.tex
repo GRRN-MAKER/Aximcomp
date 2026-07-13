@@ -256,6 +256,16 @@ CUDA in the toolchain or runtime.
 
 \section{Limitations and Future Work}
 
+\textbf{Testing status.} AXIM has so far been empirically verified on Apple~M3 (macOS,
+arm64): the Metal GPU backend, the NEON CPU backend, the bit-exact CPU\,$=$\,GPU INT4
+result, the full SYNAXIM layer forward, and the graphics pipeline all run live on that
+platform. This is a limitation of our \emph{test coverage}, not of the design. AXIM is
+architected to support \emph{all} other vendors---NVIDIA, AMD, and Intel---through the same
+vendor-neutral Vulkan (SPIR-V) and CPU-SIMD (AVX-512/AVX2) paths, and the shaders and CPU
+kernels for those targets are already written and compiling in continuous integration. What
+remains is live end-to-end validation on that hardware, not a redesign: one device family is
+\emph{proven}; the rest are \emph{supported and pending measurement}.
+
 The Vulkan runtime executor (SPIR-V loader) that dispatches shaders on NVIDIA/AMD/Intel is in
 progress; until then cross-vendor GPU results are projected. Publishing \texttt{maturin}
 wheels that link the native backends is future work. A Windows (DirectX~12 / Vulkan) target
