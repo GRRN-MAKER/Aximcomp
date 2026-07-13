@@ -88,17 +88,17 @@ def _(df, mo):
     import matplotlib.pyplot as plt
 
     fig1, ax1 = plt.subplots(figsize=(7, 4))
-    for backend, g in df.groupby("backend"):
-        g = g.sort_values("elements")
-        ax1.plot(g["elements"], g["m_elem_per_s"], marker="o", label=backend)
+    for _backend, _g in df.groupby("backend"):
+        _g = _g.sort_values("elements")
+        ax1.plot(_g["elements"], _g["m_elem_per_s"], marker="o", label=_backend)
     ax1.set_xscale("log", base=2)
     ax1.set_xlabel("elements (log2)")
     ax1.set_ylabel("throughput (M elem/s)")
     ax1.set_title("AXIM throughput by backend")
     ax1.legend()
     ax1.grid(True, alpha=0.3)
-    mo.mpl.interactive(fig1)
-    return ax1, fig1, plt
+    fig1
+    return plt,
 
 
 @app.cell
@@ -110,9 +110,9 @@ def _(mo):
 @app.cell
 def _(df, mo, plt):
     fig2, ax2 = plt.subplots(figsize=(7, 4))
-    for backend, g in df.groupby("backend"):
-        g = g.sort_values("elements")
-        ax2.plot(g["elements"], g["avg_ms"], marker="s", label=backend)
+    for _backend, _g in df.groupby("backend"):
+        _g = _g.sort_values("elements")
+        ax2.plot(_g["elements"], _g["avg_ms"], marker="s", label=_backend)
     ax2.set_xscale("log", base=2)
     ax2.set_yscale("log")
     ax2.set_xlabel("elements (log2)")
@@ -120,8 +120,8 @@ def _(df, mo, plt):
     ax2.set_title("AXIM per-dispatch latency by backend")
     ax2.legend()
     ax2.grid(True, alpha=0.3)
-    mo.mpl.interactive(fig2)
-    return ax2, fig2
+    fig2
+    return
 
 
 @app.cell
