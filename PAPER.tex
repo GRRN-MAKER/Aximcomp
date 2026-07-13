@@ -49,15 +49,8 @@
 % (e.g. when images are uploaded flat to Overleaf).
 \graphicspath{{docs/assets/}{./}}
 
-% Safe include: show the image if it exists (searching common names/paths),
-% otherwise render a simple labelled placeholder so the document always compiles.
-% Takes ONE argument: the base filename (no extension). The caption is handled
-% by \caption{} in the surrounding figure environment.
-\newcommand{\aximfig}[1]{%
-  \IfFileExists{#1.png}{\includegraphics[width=0.8\textwidth]{#1.png}}{%
-  \IfFileExists{docs/assets/#1.png}{\includegraphics[width=0.8\textwidth]{docs/assets/#1.png}}{%
-  \fbox{\parbox{0.7\textwidth}{\centering\vspace{1em}\texttt{[#1.png not found --- run scripts/make\_bench\_charts.py or upload the PNG]}\vspace{1em}}}}}%
-}
+% graphicspath above handles path lookup; just use \includegraphics directly.
+% Upload the PNGs to the Overleaf project root or docs/assets/.
 
 \begin{document}
 
@@ -284,14 +277,14 @@ elements & CPU-NEON (ms) & GPU-Metal (ms) & CPU-NEON (M el/s) & GPU-Metal (M el/
 
 \begin{figure}[H]
 \centering
-\aximfig{axim_throughput}
+\includegraphics[width=0.8\textwidth]{axim_throughput.png}
 \caption{AXIM throughput by backend (higher is better).}
 \label{fig:tput}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\aximfig{axim_latency}
+\includegraphics[width=0.8\textwidth]{axim_latency.png}
 \caption{AXIM per-dispatch latency by backend (lower is better).}
 \label{fig:lat}
 \end{figure}
