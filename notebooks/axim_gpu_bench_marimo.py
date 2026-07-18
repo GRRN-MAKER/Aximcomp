@@ -39,12 +39,13 @@ def _(mo):
 
 @app.cell
 def _():
-    import subprocess, shutil
+    import subprocess, shutil, os
 
     def run(cmd):
         try:
+            # Pass the current environment so VK_ICD_FILENAMES set later applies.
             return subprocess.run(cmd, shell=True, capture_output=True,
-                                  text=True, timeout=120).stdout.strip()
+                                  text=True, timeout=120, env=os.environ).stdout.strip()
         except Exception as e:
             return f"(error: {e})"
 
@@ -55,7 +56,7 @@ def _():
         if has_vulkaninfo else "(vulkaninfo not installed yet — run setup cell)"
     print("GPU:", gpu)
     print("Vulkan:", vk)
-    return run, shutil, subprocess
+    return os, run, shutil, subprocess
 
 
 @app.cell
@@ -107,6 +108,47 @@ def _(run):
             workdir = line.split("=", 1)[1]
     print("workdir =", workdir)
     return (workdir,)
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+        ## 2b. Make Vulkan select the NVIDIA GPU (not software llvmpipe)
+
+        If the self-test/benchmark reports `device: llvmpipe`, the Vulkan loader
+        fell back to **software** (CPU) because it couldn't find the NVIDIA
+        Vulkan ICD. This cell diagnoses and fixes that: it locates the NVIDIA
+        ICD JSON and exports `VK_ICD_FILENAMES` / `VK_DRIVER_FILES` so the next
+        cells run on the real Blackwell GPU.
+        """
+    )
+    return
+
+
+@app.cell
+def _(os, run):
+    # List all Vulkan devices the loader currently sees.
+    print("== vulkaninfo devices ==")
+    print(run("vulkaninfo --summary 2>/dev/null | grep -iE 'deviceName|GPU id|driverName' | head -12") or "(none)")
+
+    # Find the NVIDIA Vulkan ICD manifest (installed with the driver).
+    icd = run("ls /usr/share/vulkan/icd.d/*nvidia*.json 2>/dev/null | head -1")
+    if not icd:
+        icd = run("find / -iname 'nvidia_icd*.json' 2>/dev/null | head -1")
+    print("\nNVIDIA ICD manifest:", icd or "NOT FOUND")
+
+    if icd:
+        os.environ["VK_ICD_FILENAMES"] = icd   # legacy loader var
+        os.environ["VK_DRIVER_FILES"] = icd    # modern loader var
+        print("Forced Vulkan ICD ->", icd)
+        print("\n== vulkaninfo after forcing NVIDIA ICD ==")
+        print(run("vulkaninfo --summary 2>/dev/null | grep -iE 'deviceName|driverName' | head -6"))
+    else:
+        print("No NVIDIA Vulkan ICD found. Install it with:")
+        print("  sudo apt-get install -y libnvidia-gl-<DRIVER_MAJOR>   # e.g. libnvidia-gl-560")
+        print("(The RTX PRO 6000 driver ships a Vulkan ICD; this package exposes it.)")
+    return (icd,)
 
 
 @app.cell
